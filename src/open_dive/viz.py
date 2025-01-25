@@ -17,6 +17,7 @@ def plot_nifti(
     interactive=True,
     scalar_colorbar=True,
     tractography=None,
+    volume_idx=None,
     **kwargs,
 ):
     """Create a 2D rendering of a NIFTI slice.
@@ -39,6 +40,8 @@ def plot_nifti(
         Whether to interactively show the scene, by default True
     colorbar : bool, optional
         Whether to show a scalar colorbar (for FA, T1, etc.), by default True
+    volume_idx : int, optional
+        Index of the volume to display if the image is 4D, by default None
     **kwargs
         Additional keyword arguments to pass to fury.actor.slicer
     """
@@ -46,9 +49,25 @@ def plot_nifti(
     # Load the data and convert to RAS
     nifti = nib.load(nifti_path)
     nifti = nib.as_closest_canonical(nifti)
+    data = nifti.get_fdata()
+
+    if len(data.shape) == 4:
+        if volume_idx is None:
+            raise ValueError(
+                "Input is a 4D image but no volume index specified. "
+                "Please provide a volume_idx parameter to select which 3D volume to display."
+            )
+        if not 0 <= volume_idx < data.shape[3]:
+            raise ValueError(
+                f"volume_idx {volume_idx} is out of bounds for image with {data.shape[3]} volumes"
+            )
+        data = data[..., volume_idx]
+    elif len(data.shape) != 3:
+        raise ValueError(
+            f"Expected 3D or 4D image, but got image with {len(data.shape)} dimensions"
+        )
 
     # Get the data and affine
-    data = nifti.get_fdata()
     affine = nifti.affine
 
     # value range
@@ -62,7 +81,7 @@ def plot_nifti(
         data = np.flip(data, axis=0)
 
     # Set up slicer and window
-    slice_actor = slicer(data, affine=affine, **kwargs)
+    slice_actor = slicer(data, affine=affine, value_range=value_range, **kwargs)
     scene = window.Scene()
     scene.add(slice_actor)
 
@@ -108,10 +127,6 @@ def plot_nifti(
         '''
         # Set the full grayscale range (e.g., 0 to 255 for typical image data)
         lut.SetRange(value_range[0], value_range[1])  # This defines the grayscale range explicitly
-
-        # Apply the lookup table to the slice actor
-        slice_actor.GetProperty().SetLookupTable(lut)
-        slice_actor.GetProperty().SetUseLookupTableScalarRange(True)  # Ensure LUT scalar range is used
 
         # Create the scalar bar (colorbar)
         scalar_bar = vtk.vtkScalarBarActor()
