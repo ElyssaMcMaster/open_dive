@@ -4,8 +4,9 @@ from dipy.viz import window, actor
 from fury.actor import slicer
 from fury.colormap import colormap_lookup_table
 import vtk
-import matplotlib.pyplot as plt
-from matplotlib import cm  # Importing Matplotlib colormap module
+import pdb 
+from pathlib import Path
+
 
 def plot_nifti(
     nifti_path,
@@ -13,7 +14,6 @@ def plot_nifti(
     orientation="axial",
     size=(600, 400),
     value_range=None,
-    radiological=True,
     save_path=None,
     interactive=True,
     scalar_colorbar=True,
@@ -22,7 +22,30 @@ def plot_nifti(
     volume_idx=None,
     **kwargs,
 ):
-    """Create a 2D rendering of a NIFTI slice."""
+    """Create a 2D rendering of a NIFTI slice.
+
+    Parameters
+    ----------
+    nifti_path : str or Path
+        Path to NIFTI to plot
+    data_slice : str or int, optional
+        Slice to plot or "m" for middle slice, by default "m"
+    orientation : str, optional
+        Can be "axial", "sagittal" or "coronal", by default "axial"
+    size : tuple, optional
+        Size of window, by default (600,400)
+    save_path : str or Path, optional
+        Optional path to save to, by default None
+    interactive : bool, optional
+        Whether to interactively show the scene, by default True
+    colorbar : bool, optional
+        Whether to show a scalar colorbar (for FA, T1, etc.), by default True
+    volume_idx : int, optional
+        Index of the volume to display if the image is 4D, by default None
+    **kwargs
+        Additional keyword arguments to pass to fury.actor.slicer
+    """
+
     # Load the data and convert to RAS
     nifti = nib.load(nifti_path)
     nifti = nib.as_closest_canonical(nifti)
@@ -52,9 +75,6 @@ def plot_nifti(
         value_range = [np.min(data), np.max(data)]
     else:
         value_range = [value_range[0], value_range[1]]
-
-    if radiological and orientation == "axial":
-        data = np.flip(data, axis=0)
 
     # Set up slicer and window
     slice_actor = slicer(data, affine=affine, value_range=value_range, **kwargs)
@@ -112,8 +132,13 @@ def plot_nifti(
 
     # Add tractography
     if tractography is not None:
-        streamlines = nib.streamlines.load(tractography).streamlines
-        stream_actor = actor.line(streamlines, colors=None)
+        # Convert to list if single tractography file
+            colors = [(1, 0, 0)] * len(tractography)  # All red
+            
+        # Add each tractography with its corresponding color
+    for tract_file, color in zip(tractography, colors):
+        streamlines = nib.streamlines.load(tract_file).streamlines
+        stream_actor = actor.line(streamlines, colors=color)
         scene.add(stream_actor)
         
 
