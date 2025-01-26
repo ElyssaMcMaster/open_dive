@@ -60,6 +60,22 @@ def main():
         nargs="+",
         help="Values to use for coloring each tractogram (must match number of tractography files)",
     )
+    parser.add_argument(
+        "--tractography_cmap",
+        help="Matplotlib colormap to use for tractography. Default is plasma if tractograph_values is provided, otherwise Set1.",
+    )
+    parser.add_argument(
+        "--tractography_cmap_range",
+        type=float,
+        nargs=2,
+        help="Optional range to use for the colormap. Default is 0 to 1.",
+    )
+    parser.add_argument(
+        "--tractography_colorbar",
+        action="store_true",
+        help="Whether to show a tractography values colorbar, by default False",
+    )
+
 
 
     args = parser.parse_args()
@@ -85,5 +101,8 @@ def main():
         scalar_colorbar=args.scalar_colorbar,
         tractography=args.tractography,
         tractography_values=args.tractography_values,
+        tractography_cmap=args.tractography_cmap,
+        tractography_cmap_range=args.tractography_cmap_range,
+        tractography_colorbar=args.tractography_colorbar,
     )
 
