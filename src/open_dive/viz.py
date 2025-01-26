@@ -154,7 +154,7 @@ def plot_nifti(
                 norm = plt.Normalize(vmin=0, vmax=1)
             colors = [cmap(norm(val)) for val in tractography_values]
         else:
-            colors = [cmap(norm(i)) for i in range(len(tractography))]
+            colors = [cmap((i)) for i in range(len(tractography))]
             
         # Add each tractography with its corresponding color
     for tract_file, color in zip(tractography, colors):
