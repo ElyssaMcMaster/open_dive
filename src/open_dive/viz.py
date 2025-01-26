@@ -4,7 +4,8 @@ from dipy.viz import window, actor
 from fury.actor import slicer
 from fury.colormap import colormap_lookup_table
 import vtk
-import pdb 
+import matplotlib.pyplot as plt
+from matplotlib import cm  # Importing Matplotlib colormap module
 
 def plot_nifti(
     nifti_path,
@@ -17,35 +18,11 @@ def plot_nifti(
     interactive=True,
     scalar_colorbar=True,
     tractography=None,
+    tractography_colormap=None,
     volume_idx=None,
     **kwargs,
 ):
-    """Create a 2D rendering of a NIFTI slice.
-
-    Parameters
-    ----------
-    nifti_path : str or Path
-        Path to NIFTI to plot
-    data_slice : str or int, optional
-        Slice to plot or "m" for middle slice, by default "m"
-    orientation : str, optional
-        Can be "axial", "sagittal" or "coronal", by default "axial"
-    size : tuple, optional
-        Size of window, by default (600,400)
-    radiological : bool, optional
-        Whether to plot in radiological view (subject right is on image left), by default True
-    save_path : str or Path, optional
-        Optional path to save to, by default None
-    interactive : bool, optional
-        Whether to interactively show the scene, by default True
-    colorbar : bool, optional
-        Whether to show a scalar colorbar (for FA, T1, etc.), by default True
-    volume_idx : int, optional
-        Index of the volume to display if the image is 4D, by default None
-    **kwargs
-        Additional keyword arguments to pass to fury.actor.slicer
-    """
-
+    """Create a 2D rendering of a NIFTI slice."""
     # Load the data and convert to RAS
     nifti = nib.load(nifti_path)
     nifti = nib.as_closest_canonical(nifti)
@@ -75,7 +52,6 @@ def plot_nifti(
         value_range = [np.min(data), np.max(data)]
     else:
         value_range = [value_range[0], value_range[1]]
-
 
     if radiological and orientation == "axial":
         data = np.flip(data, axis=0)
@@ -119,13 +95,8 @@ def plot_nifti(
         lut.SetNumberOfTableValues(256)  # Full grayscale (256 levels)
         lut.Build()  # Initialize the LUT
         
-        
         for i in range(256):
             lut.SetTableValue(i, i / 255.0, i / 255.0, i / 255.0, 1)  # Grayscale colors
-        '''
-        We can further optimize this later to support orther colormaps; this just supports grayscale right now.
-        '''
-        # Set the full grayscale range (e.g., 0 to 255 for typical image data)
         lut.SetRange(value_range[0], value_range[1])  # This defines the grayscale range explicitly
 
         # Create the scalar bar (colorbar)
@@ -138,13 +109,20 @@ def plot_nifti(
 
         # Add the scalar bar to the scene
         scene.add(scalar_bar)
+
     # Add tractography
     if tractography is not None:
         streamlines = nib.streamlines.load(tractography).streamlines
-        stream_actor = actor.line(streamlines, colors=(1, 0, 0))
+        stream_actor = actor.line(streamlines, colors=None)
         scene.add(stream_actor)
+        
 
-    
+
+            
+
+
+
+
     # Set up camera
     scene.set_camera(position=camera_pos, focal_point=camera_focal, view_up=camera_up)
 
@@ -154,6 +132,8 @@ def plot_nifti(
 
     if interactive:
         window.show(scene, size=size, reset_camera=True)
+
+
 
 
 

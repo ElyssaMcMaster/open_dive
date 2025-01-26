@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from open_dive.viz import plot_nifti
+from ..viz import plot_nifti
 
 
 def main():
@@ -80,7 +80,7 @@ def main():
         interpolation=args.interpolation,
         scalar_colorbar=args.scalar_colorbar,
         tractography=args.tractography,
-        #tractography_colormap=args.tractography_colormap,
+        tractography_colormap=args.tractography_colormap,
 
     )
 
